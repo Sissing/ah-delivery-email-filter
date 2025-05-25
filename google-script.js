@@ -44,33 +44,36 @@ function deleteOldAHOrderEmails() {
       // Mark the newest message with a star
       var newestMsg = msgs[0];
       newestMsg.star();
-      // If previous message is read and starts with the phrase, mark newest as read
-      if (msgs.length > 1) {
-        var previousMsg = msgs[1];
+
+      var phrase = 'Bedankt voor jouw bestelling voor';
+      var newestSubject = newestMsg.getSubject();
+      var newestStartsWithPhrase = newestSubject.toLowerCase().startsWith(phrase.toLowerCase());
+
+      // Check if any previous message with the same phrase was read
+      var anyPreviousRead = false;
+      for (var i = 1; i < msgs.length; i++) {
+        var previousMsg = msgs[i];
         var previousSubject = previousMsg.getSubject();
-        var newestSubject = newestMsg.getSubject();
-        var phrase = 'Bedankt voor jouw bestelling voor';
         var previousStartsWithPhrase = previousSubject.toLowerCase().startsWith(phrase.toLowerCase());
-        var newestStartsWithPhrase = newestSubject.toLowerCase().startsWith(phrase.toLowerCase());
-        Logger.log('Previous starts with phrase in subject: ' + previousStartsWithPhrase);
-        Logger.log('Newest starts with phrase in subject: ' + newestStartsWithPhrase);
-        Logger.log('Bestelnummer: ' + bestelnummer);
-        Logger.log('Previous message date: ' + previousMsg.getDate());
-        Logger.log('Newest message date: ' + newestMsg.getDate());
-        Logger.log('Previous is unread: ' + previousMsg.isUnread());
-        Logger.log('Newest is unread: ' + newestMsg.isUnread());
-        if (previousStartsWithPhrase && newestStartsWithPhrase && previousMsg.isUnread() && newestMsg.isUnread()) {
-          Logger.log('Condition met: previous and newest start with phrase, previous is unread, newest is unread. Marking newest as read.');
-          newestMsg.markRead();
-          Logger.log('After markRead, newest is read: ' + !newestMsg.isUnread());
-        } else {
-          Logger.log('Condition NOT met:');
-          Logger.log('  previousStartsWithPhrase: ' + previousStartsWithPhrase);
-          Logger.log('  newestStartsWithPhrase: ' + newestStartsWithPhrase);
-          Logger.log('  previous is unread: ' + previousMsg.isUnread());
-          Logger.log('  newest is unread: ' + newestMsg.isUnread());
+
+        if (previousStartsWithPhrase && !previousMsg.isUnread()) {
+          anyPreviousRead = true;
+          break;
         }
       }
+
+      Logger.log('Bestelnummer: ' + bestelnummer);
+      Logger.log('Newest message date: ' + newestMsg.getDate());
+      Logger.log('Newest starts with phrase: ' + newestStartsWithPhrase);
+      Logger.log('Newest is unread: ' + newestMsg.isUnread());
+      Logger.log('Any previous message with phrase is read: ' + anyPreviousRead);
+
+      if (newestStartsWithPhrase && newestMsg.isUnread() && anyPreviousRead) {
+        Logger.log('Marking newest as read because a previous message with the same phrase was read');
+        newestMsg.markRead();
+        Logger.log('After markRead, newest is read: ' + !newestMsg.isUnread());
+      }
+
       // Always remove the star from all older messages and move them to trash
       for (var i = 1; i < msgs.length; i++) {
         msgs[i].unstar();
